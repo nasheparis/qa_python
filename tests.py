@@ -16,8 +16,8 @@ class TestBooksCollector:
     def test_add_new_book_with_long_name(self):
         collector = BooksCollector()
 
-        book = collector.add_new_book('Странная история доктора Джекила и мистера Хайда')
-        assert book not in collector.books_genre
+        collector.add_new_book('Странная история доктора Джекила и мистера Хайда')
+        assert collector.get_books_genre() == {}
 
     # тест проверяет, что из двух книг с одинаковым названием, в список добавляется только одна
     def test_add_new_book_twice(self):
@@ -54,7 +54,7 @@ class TestBooksCollector:
 
         genre = book_genres
         collector.set_book_genre(book, genre)
-        assert book in collector.books_genre and collector.books_genre[book] == genre
+        assert collector.get_book_genre(book) == genre
 
     # тест проверяет, что несуществующий жанр не добавляется к названию книги
     def test_set_book_genre_add_not_existing_genre(self):
@@ -65,7 +65,7 @@ class TestBooksCollector:
 
         genre = 'Триллер'
         collector.set_book_genre(book, genre)
-        assert genre not in collector.books_genre
+        assert collector.get_book_genre(book) == ''
 
     # тест проверяет, что добавленный жанр соответствует добавляемому
     def test_get_book_genre_add_existing_genre(self):
@@ -77,8 +77,7 @@ class TestBooksCollector:
         genre = 'Фантастика'
         collector.set_book_genre(book, genre)
 
-        collector.get_book_genre(book)
-        assert genre == 'Фантастика'
+        assert collector.get_book_genre(book) == 'Фантастика'
 
     # тест проверяет, что длина списка книг с определенным жанром совпадает с количеством книг
     def test_get_books_with_specific_genre_positive(self):
@@ -91,66 +90,48 @@ class TestBooksCollector:
             collector.add_new_book(book_name)
             collector.set_book_genre(book_name, genre)
 
-        books_with_specific_genre = collector.get_books_with_specific_genre(genre)
-        assert len(books_with_specific_genre) == len(books)
+        assert len(collector.get_books_with_specific_genre(genre)) == len(books)
 
     # тест проверяет, что текущий словарь содержит добавленные книги
     def test_get_books_genre_positive(self):
         collector = BooksCollector()
 
-        collector.add_new_book('Десять негритят')
-        collector.add_new_book('Маленький принц')
-        collector.add_new_book('Вторая жизнь Уве')
+        collector.books_genre = {'Десять негритят': 'Детективы',
+                                 'Маленький принц': 'Мультфильмы',
+                                 'Вторая жизнь Уве': 'Комедии'}
 
-        collector.set_book_genre('Десять негритят', 'Детективы')
-        collector.set_book_genre('Маленький принц', 'Мультфильмы')
-        collector.set_book_genre('Вторая жизнь Уве', 'Комедии')
-
-        book_shelf = collector.get_books_genre()
-        assert book_shelf == {'Десять негритят': 'Детективы',
-                              'Маленький принц': 'Мультфильмы',
-                              'Вторая жизнь Уве': 'Комедии'}
+        assert collector.get_books_genre() == {'Десять негритят': 'Детективы',
+                                               'Маленький принц': 'Мультфильмы',
+                                               'Вторая жизнь Уве': 'Комедии'}
 
     # тест проверяет, что при запросе списка детских книг в нем содержатся соответствующие книги
     def test_get_books_for_children_positive(self):
         collector = BooksCollector()
 
-        collector.add_new_book('Десять негритят')
-        collector.add_new_book('Маленький принц')
-        collector.add_new_book('Оно')
+        collector.books_genre = {'Десять негритят': 'Детективы',
+                                 'Маленький принц': 'Мультфильмы',
+                                 'Оно': 'Ужасы'}
 
-        collector.set_book_genre('Десять негритят', 'Детективы')
-        collector.set_book_genre('Маленький принц', 'Мультфильмы')
-        collector.set_book_genre('Оно', 'Ужасы')
+        assert collector.get_books_for_children() == ['Маленький принц']
 
-        children_books = collector.get_books_for_children()
-        assert children_books == ['Маленький принц']
+        # тест проверяет, что книга добавляется в избранное
 
-    # тест проверяет, что книга добавляется в избранное
     def test_add_book_in_favorites_positive(self):
         collector = BooksCollector()
 
-        collector.add_new_book('Десять негритят')
+        collector.books_genre = {'Десять негритят': 'Детективы'}
         collector.add_book_in_favorites('Десять негритят')
-        assert 'Десять негритят' in collector.get_list_of_favorites_books()
+        assert collector.get_list_of_favorites_books() == ['Десять негритят']
 
     # тест проверяет, что удалена из избранного
     def test_delete_book_from_favorites_positive(self):
         collector = BooksCollector()
-
-        collector.add_new_book('Шерлок Холмс')
+        collector.favorites = ['Шерлок Холмс']
         collector.delete_book_from_favorites('Шерлок Холмс')
-        assert 'Шерлок Холмс' not in collector.get_list_of_favorites_books()
+        assert collector.get_list_of_favorites_books() == []
 
     # тест проверяет, что в списке избранных книг содержатся добавленные книги
     def test_get_list_of_favorites_books_positive(self):
         collector = BooksCollector()
-
-        collector.add_new_book('Война миров')
-        collector.add_new_book('Автостопом по галактике')
-        collector.add_book_in_favorites('Война миров')
-        collector.add_book_in_favorites('Автостопом по галактике')
-
-        favorites_books = collector.get_list_of_favorites_books()
-
-        assert 'Война миров' in favorites_books and 'Автостопом по галактике' in favorites_books
+        collector.favorites = ['Война миров', 'Автостопом по галактике']
+        assert len(collector.get_list_of_favorites_books()) == 2
